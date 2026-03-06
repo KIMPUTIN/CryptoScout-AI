@@ -34,7 +34,7 @@ session.mount("http://", adapter)
 
 breaker = CircuitBreaker(
     failure_threshold=5,
-    recovery_timeout=120
+    recovery_time=120
 )
 
 api_tracker = APIUsageTracker(window_seconds=3600)
