@@ -1,0 +1,71 @@
+# ------------------------------------------------------
+# Earlier up to .DS
+
+# Python
+# -__pycache__/
+# -cryptoscout.db
+# -.env
+
+# Node / Frontend
+# -node_modules/
+# -dist/
+
+# OS
+# -.DS_Store
+# ------------------------------------------------------
+
+# -----------------------------
+
+# Python
+
+# -----------------------------
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+cryptoscout.db
+.env
+venv/
+.venv/
+
+# -----------------------------
+
+# Node / Frontend
+
+# -----------------------------
+
+node_modules/
+dist/
+build/
+coverage/
+
+# Bun
+
+.bun/
+
+# Logs
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -----------------------------
+
+# OS files
+
+# -----------------------------
+
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+
+# IDE
+
+# -----------------------------
+
+.vscode/
+.idea/

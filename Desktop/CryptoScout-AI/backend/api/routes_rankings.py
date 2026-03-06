@@ -1,0 +1,97 @@
+
+# backend/api/routes_rankings.py
+
+import hashlib
+import json
+
+from fastapi import APIRouter, Response, Request, Query
+from fastapi.responses import JSONResponse
+
+from services.ranking_service import (
+    get_short_term,
+    get_long_term,
+    get_low_risk,
+    get_high_growth,
+    get_top_opportunities
+)
+
+
+
+router = APIRouter(prefix="/rankings", tags=["Rankings"])
+
+
+# =====================================================
+# ETag Helper
+# =====================================================
+
+def etag_response(request: Request, response: Response, data):
+    etag = hashlib.md5(
+        json.dumps(data, sort_keys=True).encode()
+    ).hexdigest()
+
+    client_etag = request.headers.get("if-none-match")
+
+    if client_etag == etag:
+        return Response(status_code=304)
+
+    response.headers["ETag"] = etag
+    response.headers["Cache-Control"] = "public, max-age=60"
+
+    return JSONResponse(content=data)
+
+
+# =====================================================
+# ENDPOINTS
+# =====================================================
+
+@router.get("/short-term")
+def short_term(
+    request: Request,
+    response: Response,
+    profile: str = "balanced",
+    limit: int = Query(20, le=100),
+    offset: int = Query(0)
+):
+    data = get_short_term(profile, limit, offset)
+    return etag_response(request, response, data)
+
+
+@router.get("/long-term")
+def long_term(
+    request: Request,
+    response: Response,
+    profile: str = "balanced",
+    limit: int = Query(20, le=100),
+    offset: int = Query(0)
+):
+    data = get_long_term(profile, limit, offset)
+    return etag_response(request, response, data)
+
+
+@router.get("/low-risk")
+def low_risk(
+    request: Request,
+    response: Response,
+    profile: str = "balanced",
+    limit: int = Query(20, le=100),
+    offset: int = Query(0)
+):
+    data = get_low_risk(profile, limit, offset)
+    return etag_response(request, response, data)
+
+
+@router.get("/high-growth")
+def high_growth(
+    request: Request,
+    response: Response,
+    profile: str = "balanced",
+    limit: int = Query(20, le=100),
+    offset: int = Query(0)
+):
+    data = get_high_growth(profile, limit, offset)
+    return etag_response(request, response, data)
+
+@router.get("/opportunities")
+def opportunities(limit: int = 10):
+    return get_top_opportunities(limit)
+
