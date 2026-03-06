@@ -50,10 +50,6 @@ def qualifies_for_ai(project: Dict[str, Any]) -> bool:
 # PRE ANALYSIS CACHE CHECK
 # =====================================================
 
-if not ai_circuit_breaker.can_execute():
-    logger.warning("AI circuit open — using fallback")
-    return fallback_analysis(project)
-
 def analyze_project(project):
 
     symbol = project.get("symbol")
@@ -64,6 +60,10 @@ def analyze_project(project):
 
     if cached:
         return cached
+
+    if not ai_circuit_breaker.can_execute():
+    # logger.warning("AI circuit open — using fallback")
+        return fallback_analysis(project)
 
 
 # =====================================================
