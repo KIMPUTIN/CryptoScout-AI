@@ -58,4 +58,7 @@ class CircuitBreaker:
 
 
 # global circuit breaker instance
-ai_circuit_breaker = CircuitBreaker()
+ai_circuit_breaker = CircuitBreaker(
+    failure_threshold=5,
+    recovery_time=60
+)
