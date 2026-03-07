@@ -288,16 +288,17 @@ def filter_opportunities(projects):
     return filtered
 
 
+# ============================================
+# TOP OPPORTUNITIES
+# ============================================
+
 def rank_opportunities(projects, limit=10):
-    """
-    Rank projects using the combined score.
-    """
 
     ranked = sorted(
         projects,
         key=lambda x: (
-            x.get("combined_score", 0),
-            x.get("ai_score", 0)
+            x.get("score", 0),
+            x.get("confidence", 0)
         ),
         reverse=True
     )
@@ -305,14 +306,26 @@ def rank_opportunities(projects, limit=10):
     return ranked[:limit]
 
 
-def get_top_opportunities(limit: int = 10):
-    """
-    Public function used by API.
-    """
+def filter_opportunities(projects):
 
-    rankings = get_rankings(limit=500)
+    filtered = []
 
-    filtered = filter_opportunities(rankings)
+    for p in projects:
+
+        if p.get("score", 0) < 60:
+            continue
+
+        if p.get("volume_24h", 0) < 2_000_000:
+            continue
+
+        filtered.append(p)
+
+    return filtered
+
+
+def build_top_opportunities(projects, limit=10):
+
+    filtered = filter_opportunities(projects)
 
     ranked = rank_opportunities(filtered, limit)
 
