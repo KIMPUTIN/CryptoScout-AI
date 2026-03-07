@@ -66,3 +66,7 @@ async def coinbase_webhook(request: Request):
         )
 
     return {"status": "success"}
+
+@router.get("/payments/test")
+def test():
+    return {"status": "ok"}

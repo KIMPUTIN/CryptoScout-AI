@@ -23,7 +23,7 @@ from api.routes_ws import router as ws_router
 from fastapi import Response
 
 from api.routes_ai import router as ai_router
-from payments import router as payments_router
+from services.payments import router as payments_router
 
 from database.db import run_migrations
 
