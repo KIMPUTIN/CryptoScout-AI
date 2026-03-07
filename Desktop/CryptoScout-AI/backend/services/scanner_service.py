@@ -21,7 +21,7 @@ from repositories.project_repository import (
 
 from models.scan_status import ScanStatus
 from core.ws_manager import manager
-from services.ranking_service import build_top_opportunities
+from services.ranking_service import get_top_opportunities
 
 
 logger = logging.getLogger(__name__)
@@ -334,4 +334,4 @@ async def scan_single_project(symbol: str) -> Optional[Dict]:
         logger.error(f"Failed to scan single project {symbol}: {e}")
         return None
     
-    top_opportunities = build_top_opportunities(analyzed_projects, limit=10)
+    top_opportunities = get_top_opportunities(analyzed_projects, limit=10)

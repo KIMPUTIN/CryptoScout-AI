@@ -323,7 +323,7 @@ def filter_opportunities(projects):
     return filtered
 
 
-def build_top_opportunities(projects, limit=10):
+def get_top_opportunities(projects, limit=10):
 
     filtered = filter_opportunities(projects)
 
