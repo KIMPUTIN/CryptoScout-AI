@@ -14,7 +14,6 @@ from core.redis_client import cache_set
 from services.market_narrative_service import generate_market_narrative
 from services.ai_service import pre_analyze_projects
 
-
 logger = logging.getLogger(__name__)
 
 # =====================================================
@@ -58,12 +57,21 @@ def _safe_scan():
         # 4️⃣ Cache signals in Redis
         cache_set("recent_signals", signals, 300)
 
-        # NEW: generate market narrative
+        # 5️⃣ Generate market narrative
         generate_market_narrative(projects, signals)
 
-        # 5️⃣ Broadcast signals
+        # 6️⃣ Broadcast signals
         if signals:
-            asyncio.run(_broadcast_signals(signals))
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # schedule without blocking
+                    asyncio.create_task(_broadcast_signals(signals))
+                else:
+                    asyncio.run(_broadcast_signals(signals))
+            except RuntimeError:
+                # fallback if no running loop
+                asyncio.run(_broadcast_signals(signals))
 
     finally:
         _lock.release()
@@ -74,13 +82,17 @@ def _safe_scan():
 # =====================================================
 
 async def _broadcast_signals(signals):
-
+    """
+    Broadcast all signals to connected WebSocket clients.
+    """
     for signal in signals:
-
-        await manager.broadcast({
-            "event": "scan_complete",
-            "data": result
-        })
+        try:
+            await manager.broadcast({
+                "event": "scan_complete",
+                "data": signal
+            })
+        except Exception as e:
+            logger.warning("Failed to broadcast signal: %s", e)
 
 
 # =====================================================
@@ -93,10 +105,8 @@ def _scheduler_loop():
     logger.info("Scheduler started (interval: %s sec)", SCAN_INTERVAL_SECONDS)
 
     while _running:
-
         try:
             _safe_scan()
-
         except Exception as e:
             logger.error("Scheduler error: %s", e)
 

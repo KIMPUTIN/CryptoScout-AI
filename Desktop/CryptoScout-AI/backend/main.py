@@ -1,12 +1,11 @@
 
 # backend/main.py
 
-from fastapi import FastAPI
+import os
+import sentry_sdk
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-
-import sentry_sdk
-import os
 
 from core.config import APP_NAME, ALLOWED_ORIGINS
 from core.logging_config import setup_logging
@@ -21,13 +20,7 @@ from api.routes_backtest import router as backtest_router
 from api.routes_alerts import router as alerts_router
 from api.routes_ws import router as ws_router
 from api.routes_ai import router as ai_router
-# from fastapi import Response
-
-
 from services.payments_service import router as payments_router
-
-
-
 
 
 # =====================================================
@@ -44,22 +37,20 @@ setup_logging()
 app = FastAPI(title=APP_NAME)
 
 
-
 # =====================================================
-# SECURITY HEARDERS
+# SECURITY HEADERS
 # =====================================================
 
 @app.middleware("http")
-async def coop_fix(request, call_next):
+async def security_headers_middleware(request: Request, call_next):
     response = await call_next(request)
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
     return response
 
 
 # =====================================================
-# MIDDLEWARE - CORS immediately after app creation
+# CORS MIDDLEWARE
 # =====================================================
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -69,9 +60,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ====================================================
+
+# =====================================================
 # OPTIONAL GZIP
-# ====================================================
+# =====================================================
 
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
@@ -81,7 +73,6 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 # =====================================================
 
 SENTRY_DSN = os.getenv("SENTRY_DSN")
-
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
@@ -90,22 +81,24 @@ if SENTRY_DSN:
 
 
 # =====================================================
-# STARTUP
+# STARTUP EVENT
 # =====================================================
 
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
+    # Initialize DB and run migrations
     init_db()
-    run_migrations()   
+    run_migrations()
+    # Start background scheduler
     start_scheduler()
 
 
-# ====================================================
+# =====================================================
 # HEALTH CHECK
-# ====================================================
+# =====================================================
 
 @app.get("/health")
-def health():
+async def health():
     return {"status": "ok"}
 
 
@@ -122,6 +115,3 @@ app.include_router(alerts_router)
 app.include_router(ws_router)
 app.include_router(ai_router, prefix="/ai")
 app.include_router(payments_router)
-
-
-

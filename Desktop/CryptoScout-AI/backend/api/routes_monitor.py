@@ -3,6 +3,7 @@
 
 from fastapi import APIRouter
 from datetime import datetime
+import logging
 
 from services.scanner_service import get_scan_status
 from services.ai_service import ai_engine_health
@@ -14,8 +15,9 @@ from services.ranking_service import get_rankings
 from core.redis_client import cache_get
 
 
-
 router = APIRouter(prefix="/monitor")
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/health")
@@ -23,39 +25,43 @@ def health():
     return {"status": "ok"}
 
 
-@router.get("/monitor")
+@router.get("/")
 def monitor():
 
     scan_info = get_scan_status()
 
+    scanner = scan_info.get("scanner", {})
+
     overall_status = "healthy"
 
-    if scan_info["scanner"]["last_result"] == "FAILED":
+    if scanner.get("last_result") == "FAILED":
         overall_status = "degraded"
 
-    if scan_info["scanner"]["failure_count"] > 3:
+    if scanner.get("failure_count", 0) > 3:
         overall_status = "critical"
 
-    if api_tracker.snapshot()["calls_last_hour"] > 80:
-        logger.warning("Approaching API budget limit")
+    api_snapshot = api_tracker.snapshot()
 
+    if api_snapshot.get("calls_last_hour", 0) > 80:
+        logger.warning("Approaching API budget limit")
 
     return {
         "overall_status": overall_status,
-        "scanner": scan_info["scanner"],
-        "api_failures": scan_info["api_failures"],
+        "scanner": scanner,
+        "api_failures": scan_info.get("api_failures", {}),
         "ai_engine": ai_engine_health(),
         "timestamp": datetime.utcnow().isoformat(),
         "market_circuit": breaker.snapshot(),
-        "api_usage": api_tracker.snapshot()
+        "api_usage": api_snapshot
     }
 
+
 @router.get("/signals")
-def get_signals():
+async def get_signals():
 
     rankings = get_rankings(limit=200)
 
-    signals = generate_signals(rankings)
+    signals = await generate_signals(rankings)
 
     return signals
 

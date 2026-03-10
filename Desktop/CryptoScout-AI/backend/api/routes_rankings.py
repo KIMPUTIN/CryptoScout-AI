@@ -15,8 +15,6 @@ from services.ranking_service import (
     get_top_opportunities
 )
 
-
-
 router = APIRouter(prefix="/rankings", tags=["Rankings"])
 
 
@@ -24,20 +22,23 @@ router = APIRouter(prefix="/rankings", tags=["Rankings"])
 # ETag Helper
 # =====================================================
 
-def etag_response(request: Request, response: Response, data):
-    etag = hashlib.md5(
-        json.dumps(data, sort_keys=True).encode()
-    ).hexdigest()
+def etag_response(request: Request, data):
+
+    body = json.dumps(data, sort_keys=True, default=str)
+
+    etag = hashlib.md5(body.encode()).hexdigest()
 
     client_etag = request.headers.get("if-none-match")
 
     if client_etag == etag:
         return Response(status_code=304)
 
+    response = JSONResponse(content=data)
+
     response.headers["ETag"] = etag
     response.headers["Cache-Control"] = "public, max-age=60"
 
-    return JSONResponse(content=data)
+    return response
 
 
 # =====================================================
@@ -47,62 +48,76 @@ def etag_response(request: Request, response: Response, data):
 @router.get("/short-term")
 def short_term(
     request: Request,
-    response: Response,
     profile: str = "balanced",
     limit: int = Query(20, le=100),
     offset: int = Query(0)
 ):
+
     data = get_short_term(profile, limit, offset)
-    return etag_response(request, response, data)
+
+    return etag_response(request, data)
 
 
 @router.get("/long-term")
 def long_term(
     request: Request,
-    response: Response,
     profile: str = "balanced",
     limit: int = Query(20, le=100),
     offset: int = Query(0)
 ):
+
     data = get_long_term(profile, limit, offset)
-    return etag_response(request, response, data)
+
+    return etag_response(request, data)
 
 
 @router.get("/low-risk")
 def low_risk(
     request: Request,
-    response: Response,
     profile: str = "balanced",
     limit: int = Query(20, le=100),
     offset: int = Query(0)
 ):
+
     data = get_low_risk(profile, limit, offset)
-    return etag_response(request, response, data)
+
+    return etag_response(request, data)
 
 
 @router.get("/high-growth")
 def high_growth(
     request: Request,
-    response: Response,
     profile: str = "balanced",
     limit: int = Query(20, le=100),
     offset: int = Query(0)
 ):
+
     data = get_high_growth(profile, limit, offset)
-    return etag_response(request, response, data)
+
+    return etag_response(request, data)
+
 
 @router.get("/opportunities")
-def opportunities(limit: int = 10):
-    return get_top_opportunities(limit)
+def opportunities(
+    request: Request,
+    limit: int = Query(10, le=50)
+):
+
+    projects = get_short_term(limit=200)
+
+    data = get_top_opportunities(projects, limit)
+
+    return etag_response(request, data)
 
 
 @router.get("/")
 def rankings(
     request: Request,
-    response: Response,
     profile: str = "balanced",
     limit: int = Query(20, le=100),
     offset: int = Query(0)
 ):
+
     data = get_short_term(profile, limit, offset)
-    return etag_response(request, response, data)
+
+    return etag_response(request, data)

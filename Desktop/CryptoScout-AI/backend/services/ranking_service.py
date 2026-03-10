@@ -2,21 +2,14 @@
 # backend/services/ranking_service.py
 
 import logging
-from datetime import datetime
+import math
 from typing import List, Dict, Optional
 
 from core.config import RANKING_CACHE_DURATION
 from repositories.project_repository import get_all_projects
 from core.redis_client import cache_get, cache_set
 
-
 logger = logging.getLogger(__name__)
-
-"""_cache = {
-    "data": None,
-    "timestamp": None
-}
-"""
 
 # =====================================================
 # CORE METRICS
@@ -41,42 +34,44 @@ def compute_volatility_heat(project: Dict) -> str:
         return "LOW"
 
 
-
 # =====================================================
-# ADVANCED METRICS (PRO LEVEL)
+# ADVANCED METRICS
 # =====================================================
 
 def compute_market_cap_score(project: Dict) -> float:
+
     mc = float(project.get("market_cap") or 0)
 
     if mc <= 0:
         return 0
 
-    # log scale normalization
-    import math
     score = min(math.log10(mc) / 12, 1)
+
     return round(score, 4)
 
 
 def compute_volume_pressure(project: Dict) -> float:
+
     volume = float(project.get("volume_24h") or 0)
     market_cap = float(project.get("market_cap") or 1)
 
     ratio = volume / market_cap
+
     return round(min(ratio * 5, 1), 4)
 
 
 def compute_trend_acceleration(project: Dict) -> float:
+
     change_24h = float(project.get("price_change_24h") or 0)
     change_7d = float(project.get("price_change_7d") or 0)
 
     accel = change_24h - (change_7d / 7)
+
     return round(accel / 100, 4)
 
 
-
 # =====================================================
-# RISK PROFILE SCORING
+# COMBINED SCORE
 # =====================================================
 
 def compute_combined_score(project: Dict, profile: str = "balanced") -> float:
@@ -84,6 +79,7 @@ def compute_combined_score(project: Dict, profile: str = "balanced") -> float:
     market_cap = float(project.get("market_cap") or 0)
     ai_score = float(project.get("ai_score") or 0) / 100
     sentiment = float(project.get("sentiment_score") or 0)
+
     change_24h = float(project.get("price_change_24h") or 0)
     change_7d = float(project.get("price_change_7d") or 0)
 
@@ -106,6 +102,7 @@ def compute_combined_score(project: Dict, profile: str = "balanced") -> float:
 
     return round(final_score, 4)
 
+
 # =====================================================
 # RANKING ENGINE
 # =====================================================
@@ -113,16 +110,19 @@ def compute_combined_score(project: Dict, profile: str = "balanced") -> float:
 def _build_rankings(profile: str = "balanced") -> List[Dict]:
 
     projects = get_all_projects()
-    ranked = []
+
+    ranked: List[Dict] = []
 
     for project in projects:
+
+        project = project.copy()
+
         score = compute_combined_score(project, profile)
 
         project["combined_score"] = score
         project["volatility_heat"] = compute_volatility_heat(project)
         project["trend_momentum"] = compute_trend_momentum(project)
 
-        # ✅ serialize EACH project
         ranked.append(serialize_project_summary(project))
 
     ranked.sort(key=lambda x: x["combined_score"], reverse=True)
@@ -130,7 +130,6 @@ def _build_rankings(profile: str = "balanced") -> List[Dict]:
     logger.info("Rankings rebuilt (%s projects)", len(ranked))
 
     return ranked
-
 
 
 # =====================================================
@@ -143,16 +142,20 @@ def get_rankings(
     offset: int = 0
 ) -> List[Dict]:
 
-    cached = cache_get(f"rankings:v2:{profile}")    #----------v2
+    cache_key = f"rankings:v2:{profile}"
+
+    cached = cache_get(cache_key)
+
     if not cached:
+
         data = _build_rankings(profile)
-        cache_set(f"rankings:v2:{profile}", data, 30) #---------v2 n 300 to 30
+
+        cache_set(cache_key, data, RANKING_CACHE_DURATION)
+
     else:
         data = cached
 
     return data[offset:offset + limit]
-
-
 
 
 # =====================================================
@@ -168,10 +171,12 @@ def personalize_rankings(
         return rankings
 
     for project in rankings:
-        if project["symbol"] in user_preferences:
+
+        if project.get("symbol") in user_preferences:
             project["combined_score"] += 0.1
 
     rankings.sort(key=lambda x: x["combined_score"], reverse=True)
+
     return rankings
 
 
@@ -179,57 +184,55 @@ def personalize_rankings(
 # FILTERED VIEWS
 # =====================================================
 
-def get_short_term(
-    profile: str = "balanced",
-    limit: int = 20,
-    offset: int = 0
-):
+def get_short_term(profile="balanced", limit=20, offset=0):
+
     return get_rankings(profile, limit, offset)
 
 
-def get_long_term(
-    profile: str = "balanced",
-    limit: int = 20,
-    offset: int = 0
-):
+def get_long_term(profile="balanced", limit=20, offset=0):
+
     data = get_rankings(profile)
+
     data = sorted(
         data,
         key=lambda x: x.get("market_cap", 0),
         reverse=True
     )
+
     return data[offset:offset + limit]
 
 
-def get_low_risk(
-    profile: str = "balanced",
-    limit: int = 20,
-    offset: int = 0
-):
+def get_low_risk(profile="balanced", limit=20, offset=0):
+
     data = get_rankings(profile)
+
     data = sorted(
         data,
         key=lambda x: abs(x.get("price_change_24h", 0))
     )
+
     return data[offset:offset + limit]
 
 
-def get_high_growth(
-    profile: str = "balanced",
-    limit: int = 20,
-    offset: int = 0
-):
+def get_high_growth(profile="balanced", limit=20, offset=0):
+
     data = get_rankings(profile)
+
     data = sorted(
         data,
         key=lambda x: x.get("price_change_7d", 0),
         reverse=True
     )
+
     return data[offset:offset + limit]
 
 
+# =====================================================
+# SERIALIZER
+# =====================================================
 
 def serialize_project_summary(project: Dict) -> Dict:
+
     return {
         "symbol": project.get("symbol"),
         "name": project.get("name"),
@@ -238,28 +241,27 @@ def serialize_project_summary(project: Dict) -> Dict:
         "volatility_heat": project.get("volatility_heat"),
         "trend_momentum": project.get("trend_momentum"),
         "ai_score": project.get("ai_score", 0),
-        "ai_verdict": project.get("ai_verdict", "UNKNOWN")
+        "ai_verdict": project.get("ai_verdict", "UNKNOWN"),
+        "market_cap": project.get("market_cap", 0),
+        "volume_24h": project.get("volume_24h", 0),
+        "price_change_24h": project.get("price_change_24h", 0),
+        "price_change_7d": project.get("price_change_7d", 0)
     }
 
 
 # =====================================================
-# TOP OPPORTUNITIES
+# OPPORTUNITY ENGINE
 # =====================================================
 
-def filter_opportunities(projects):
-    """
-    Remove weak signals before ranking.
-    """
+def filter_opportunities(projects: List[Dict]) -> List[Dict]:
 
     filtered = []
 
     for p in projects:
 
-        # Use combined_score from ranking engine
         if p.get("combined_score", 0) < 0.55:
             continue
 
-        # ensure liquidity
         if p.get("volume_24h", 0) < 2_000_000:
             continue
 
@@ -268,16 +270,12 @@ def filter_opportunities(projects):
     return filtered
 
 
-# ============================================
-# TOP OPPORTUNITIES
-# ============================================
-
-def rank_opportunities(projects, limit=10):
+def rank_opportunities(projects: List[Dict], limit: int = 10):
 
     ranked = sorted(
         projects,
         key=lambda x: (
-            x.get("score", 0),
+            x.get("combined_score", 0),
             x.get("confidence", 0)
         ),
         reverse=True
@@ -286,24 +284,7 @@ def rank_opportunities(projects, limit=10):
     return ranked[:limit]
 
 
-def filter_opportunities(projects):
-
-    filtered = []
-
-    for p in projects:
-
-        if p.get("score", 0) < 60:
-            continue
-
-        if p.get("volume_24h", 0) < 2_000_000:
-            continue
-
-        filtered.append(p)
-
-    return filtered
-
-
-def get_top_opportunities(projects, limit=10):
+def get_top_opportunities(projects: List[Dict], limit: int = 10):
 
     filtered = filter_opportunities(projects)
 

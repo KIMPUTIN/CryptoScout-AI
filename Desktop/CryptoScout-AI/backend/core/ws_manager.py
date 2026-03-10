@@ -1,10 +1,11 @@
 
 # backend/core/ws_manager.py
 
-from fastapi import WebSocket
-from typing import List
+import asyncio
 import logging
-import json
+from typing import List
+
+from fastapi import WebSocket
 
 logger = logging.getLogger(__name__)
 
@@ -13,23 +14,33 @@ class ConnectionManager:
 
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self.lock = asyncio.Lock()
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        async with self.lock:
+            self.active_connections.append(websocket)
+        logger.info("WebSocket connected. Total connections: %d", len(self.active_connections))
 
-    def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
+    async def disconnect(self, websocket: WebSocket):
+        async with self.lock:
+            if websocket in self.active_connections:
+                self.active_connections.remove(websocket)
+        logger.info("WebSocket disconnected. Total connections: %d", len(self.active_connections))
 
-    async def broadcast(self, message: dict):
+    async def broadcast(self, message: dict) -> None:
         """
-        Send message to all connected clients.
+        Send a message to all connected clients.
         """
-        for connection in self.active_connections:
+        async with self.lock:
+            connections = list(self.active_connections)
+
+        for connection in connections:
             try:
                 await connection.send_json(message)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to send message to client: %s", e)
 
+
+# Singleton instance
 manager = ConnectionManager()
