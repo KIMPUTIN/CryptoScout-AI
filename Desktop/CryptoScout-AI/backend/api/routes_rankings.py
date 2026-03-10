@@ -97,4 +97,12 @@ def opportunities(limit: int = 10):
 
 
 @router.get("/")
-def get_rankings():
+def rankings(
+    request: Request,
+    response: Response,
+    profile: str = "balanced",
+    limit: int = Query(20, le=100),
+    offset: int = Query(0)
+):
+    data = get_short_term(profile, limit, offset)
+    return etag_response(request, response, data)

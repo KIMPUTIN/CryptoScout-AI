@@ -242,26 +242,6 @@ def serialize_project_summary(project: Dict) -> Dict:
     }
 
 
-
-
-""" Earlier serializer--------------------
-def serialize_project_summary(project: Dict) -> Dict:
-    return {
-        "symbol": project.get("symbol"),
-        "name": project.get("name"),
-        "current_price": project.get("current_price", 0),
-
-        # ⭐ NEVER allow None
-        "combined_score": float(project.get("combined_score") or 0),
-        "volatility_heat": project.get("volatility_heat", "LOW"),
-        "trend_momentum": float(project.get("trend_momentum") or 0),
-
-        "ai_score": float(project.get("ai_score") or 0),
-        "ai_verdict": project.get("ai_verdict") or "UNKNOWN"
-    }
-"""
-
-
 # =====================================================
 # TOP OPPORTUNITIES
 # =====================================================
