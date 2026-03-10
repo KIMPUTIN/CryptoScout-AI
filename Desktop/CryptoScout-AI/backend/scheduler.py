@@ -78,8 +78,8 @@ async def _broadcast_signals(signals):
     for signal in signals:
 
         await manager.broadcast({
-            "type": "scan_complete",
-            "data": data
+            "event": "scan_complete",
+            "data": result
         })
 
 
