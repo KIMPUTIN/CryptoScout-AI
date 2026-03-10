@@ -114,10 +114,10 @@ def health():
 # =====================================================
 
 app.include_router(auth_router)
-app.include_router(rankings_router, prefix="/rankings", tags=["rankings"])
+app.include_router(rankings_router)
 app.include_router(watchlist_router)
-app.include_router(monitor_router, prefix="/monitor")
-app.include_router(backtest_router, prefix="/backtest")
+app.include_router(monitor_router)
+app.include_router(backtest_router)
 app.include_router(alerts_router)
 app.include_router(ws_router)
 app.include_router(ai_router, prefix="/ai")
