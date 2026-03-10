@@ -97,4 +97,4 @@ def opportunities(limit: int = 10):
 
 
 @router.get("/")
-
+def get_rankings():
