@@ -15,7 +15,7 @@ from core.redis_client import cache_get
 
 
 
-router = APIRouter(tags=["Monitor"])
+router = APIRouter(prefix="/monitor")
 
 
 @router.get("/health")
