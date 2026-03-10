@@ -10,7 +10,7 @@ import os
 
 from core.config import APP_NAME, ALLOWED_ORIGINS
 from core.logging_config import setup_logging
-from database.db import init_db
+from database.db import init_db, run_migrations
 from scheduler import start_scheduler
 
 from api.routes_auth import router as auth_router
@@ -20,12 +20,13 @@ from api.routes_monitor import router as monitor_router
 from api.routes_backtest import router as backtest_router
 from api.routes_alerts import router as alerts_router
 from api.routes_ws import router as ws_router
-from fastapi import Response
-
 from api.routes_ai import router as ai_router
+# from fastapi import Response
+
+
 from services.payments_service import router as payments_router
 
-from database.db import run_migrations
+
 
 
 
@@ -43,7 +44,12 @@ setup_logging()
 app = FastAPI(title=APP_NAME)
 
 
-@app.middleware("https")
+
+# =====================================================
+# SECURITY HEARDERS
+# =====================================================
+
+@app.middleware("http")
 async def coop_fix(request, call_next):
     response = await call_next(request)
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
@@ -63,7 +69,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# optional gzip
+# ====================================================
+# OPTIONAL GZIP
+# ====================================================
+
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
@@ -87,13 +96,18 @@ if SENTRY_DSN:
 @app.on_event("startup")
 def startup_event():
     init_db()
-    run_migrations()   # 👈 ADD THIS
+    run_migrations()   
     start_scheduler()
 
+
+# ====================================================
+# HEALTH CHECK
+# ====================================================
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
 
 # =====================================================
 # ROUTERS
