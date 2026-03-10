@@ -95,3 +95,6 @@ def high_growth(
 def opportunities(limit: int = 10):
     return get_top_opportunities(limit)
 
+
+@router.get("/")
+

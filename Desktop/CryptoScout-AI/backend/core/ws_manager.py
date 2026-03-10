@@ -36,7 +36,7 @@ class ConnectionManager:
                 await connection.send_json(message)
 
             except Exception:
-                self.disconnect(connection)
+                pass
 
 
 manager = ConnectionManager()

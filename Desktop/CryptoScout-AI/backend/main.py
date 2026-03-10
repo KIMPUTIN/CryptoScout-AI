@@ -91,6 +91,9 @@ def startup_event():
     start_scheduler()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 # =====================================================
 # ROUTERS
@@ -100,10 +103,10 @@ app.include_router(auth_router)
 app.include_router(rankings_router, prefix="/rankings", tags=["rankings"])
 app.include_router(watchlist_router)
 app.include_router(monitor_router, prefix="/monitor")
-app.include_router(backtest_router)
+app.include_router(backtest_router, prefix="/backtest")
 app.include_router(alerts_router)
 app.include_router(ws_router)
-app.include_router(ai_router)
+app.include_router(ai_router, prefix="/ai")
 app.include_router(payments_router)
 
 
