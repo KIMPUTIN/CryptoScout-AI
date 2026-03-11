@@ -94,6 +94,15 @@ async def startup_event():
     start_scheduler()
 
 
+@app.on_event("startup")
+def startup_event():
+    init_db()
+    run_migrations()
+    start_scheduler()
+
+    print("🚀 Backend started")
+    print("📡 WebSocket system ready")
+
 # =====================================================
 # HEALTH CHECK
 # =====================================================

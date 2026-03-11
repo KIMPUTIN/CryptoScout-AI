@@ -20,8 +20,9 @@ from repositories.project_repository import (
 )
 
 from models.scan_status import ScanStatus
-from core.ws_manager import manager
+#from core.ws_manager import manager
 from services.ranking_service import get_top_opportunities
+from core.event_bus import emit
 
 
 logger = logging.getLogger(__name__)
@@ -44,13 +45,10 @@ def get_scan_status():
 async def broadcast_alert(symbol: str, change_pct: float):
     """Helper function to broadcast alerts asynchronously"""
     try:
-        await manager.broadcast({
-            "event": "score_alert",
-            "data": {
-                "symbol": symbol,
-                "change_pct": round(change_pct, 2),
-                "timestamp": datetime.utcnow().isoformat()
-            }
+        await emit_score_alert("score_alert", {
+            "symbol": symbol,
+            "change_pct": round(change_pct, 2),
+            "timestamp": datetime.utcnow().isoformat()
         })
     except Exception as e:
         logger.error(f"Failed to broadcast alert for {symbol}: {e}")
@@ -59,16 +57,14 @@ async def broadcast_alert(symbol: str, change_pct: float):
 async def broadcast_scan_completion(processed_count: int, ai_count: int):
     """Helper function to broadcast scan completion"""
     try:
-        await manager.broadcast({
-            "event": "scan_complete",
-            "data": {
-                "processed": processed_count,
-                "ai_analyzed": ai_count,
-                "timestamp": datetime.utcnow().isoformat()
-            }
+        await emit_scan_completion("scan_complete", {
+            "processed": processed_count,
+            "ai_analyzed": ai_count,
+            "timestamp": datetime.utcnow().isoformat()
         })
     except Exception as e:
         logger.error(f"Failed to broadcast scan completion: {e}")
+
 
 def calculate_score_change(previous_score: float, new_score: float) -> float:
     """Calculate percentage change between scores"""

@@ -13,6 +13,7 @@ from core.ws_manager import manager
 from core.redis_client import cache_set
 from services.market_narrative_service import generate_market_narrative
 from services.ai_service import pre_analyze_projects
+from core.event_bus import emit_sync ### to just import emit
 
 logger = logging.getLogger(__name__)
 
@@ -81,19 +82,24 @@ def _safe_scan():
 # BROADCAST SIGNALS
 # =====================================================
 
+
 async def _broadcast_signals(signals):
     """
-    Broadcast all signals to connected WebSocket clients.
+    Broadcast signals as a single batch event.
     """
-    for signal in signals:
-        try:
-            await manager.broadcast({
-                "event": "scan_complete",
-                "data": signal
-            })
-        except Exception as e:
-            logger.warning("Failed to broadcast signal: %s", e)
 
+    if not signals:
+        return
+
+    try:
+        await emit("signals_batch", {
+            "count": len(signals),
+            "signals": signals,
+            "timestamp": time.time()
+        })
+
+    except Exception as e:
+        logger.warning("Failed to broadcast signals batch: %s", e)
 
 # =====================================================
 # BACKGROUND LOOP
