@@ -21,6 +21,7 @@ from api.routes_alerts import router as alerts_router
 from api.routes_ws import router as ws_router
 from api.routes_ai import router as ai_router
 from services.payments_service import router as payments_router
+from api.routes_signals import router as signals_router
 
 
 # =====================================================
@@ -115,3 +116,4 @@ app.include_router(alerts_router)
 app.include_router(ws_router)
 app.include_router(ai_router, prefix="/ai")
 app.include_router(payments_router)
+app.include_router(signals_router)

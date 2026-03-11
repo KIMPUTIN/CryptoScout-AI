@@ -111,3 +111,14 @@ def opportunity_heatmap():
         })
 
     return heatmap
+
+
+@router.get("/")
+def monitor_root():
+    return {
+        "status": "monitor online",
+        "endpoints": [
+            "/monitor/opportunity-radar",
+            "/monitor/opportunity-heatmap"
+        ]
+    }
