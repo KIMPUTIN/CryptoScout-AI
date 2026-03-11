@@ -6,10 +6,21 @@ from core.ws_manager import manager
 
 logger = logging.getLogger(__name__)
 
+# reference to the main FastAPI loop
+_main_loop = None
+
+
+def set_event_loop(loop):
+    """
+    Called during FastAPI startup to store the main loop.
+    """
+    global _main_loop
+    _main_loop = loop
+
 
 async def emit(event: str, data: dict):
     """
-    Emit an event to all WebSocket clients.
+    Emit an event to WebSocket clients.
     """
 
     message = {
@@ -26,16 +37,14 @@ async def emit(event: str, data: dict):
 
 def emit_sync(event: str, data: dict):
     """
-    Safe sync wrapper (for scheduler threads)
+    Thread-safe emitter for scheduler/background threads.
     """
 
-    try:
-        loop = asyncio.get_event_loop()
+    if _main_loop is None:
+        logger.error("Event loop not initialized for event bus")
+        return
 
-        if loop.is_running():
-            asyncio.create_task(emit(event, data))
-        else:
-            asyncio.run(emit(event, data))
-
-    except RuntimeError:
-        asyncio.run(emit(event, data))
+    asyncio.run_coroutine_threadsafe(
+        emit(event, data),
+        _main_loop
+    )

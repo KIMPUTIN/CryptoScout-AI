@@ -13,7 +13,7 @@ from core.ws_manager import manager
 from core.redis_client import cache_set
 from services.market_narrative_service import generate_market_narrative
 from services.ai_service import pre_analyze_projects
-from core.event_bus import emit_sync ### to just import emit
+from core.event_bus import emit_sync 
 
 logger = logging.getLogger(__name__)
 

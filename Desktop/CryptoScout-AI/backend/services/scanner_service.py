@@ -45,7 +45,7 @@ def get_scan_status():
 async def broadcast_alert(symbol: str, change_pct: float):
     """Helper function to broadcast alerts asynchronously"""
     try:
-        await emit_score_alert("score_alert", {
+        await emit("score_alert", {
             "symbol": symbol,
             "change_pct": round(change_pct, 2),
             "timestamp": datetime.utcnow().isoformat()
@@ -57,7 +57,7 @@ async def broadcast_alert(symbol: str, change_pct: float):
 async def broadcast_scan_completion(processed_count: int, ai_count: int):
     """Helper function to broadcast scan completion"""
     try:
-        await emit_scan_completion("scan_complete", {
+        await emit("scan_complete", {
             "processed": processed_count,
             "ai_analyzed": ai_count,
             "timestamp": datetime.utcnow().isoformat()

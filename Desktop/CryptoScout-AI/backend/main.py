@@ -3,6 +3,9 @@
 
 import os
 import sentry_sdk
+import asyncio
+
+from core.event_bus import set_event_loop
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -93,6 +96,13 @@ async def startup_event():
     # Start background scheduler
     start_scheduler()
 
+     # store main event loop for thread-safe emits
+    loop = asyncio.get_running_loop()
+    set_event_loop(loop)
+
+    print("🚀 Backend started")
+    print("📡 WebSocket system ready")
+
 
 @app.on_event("startup")
 def startup_event():
@@ -103,15 +113,27 @@ def startup_event():
     print("🚀 Backend started")
     print("📡 WebSocket system ready")
 
-# =====================================================
+# ====================================================
 # HEALTH CHECK
-# =====================================================
+# ====================================================
 
 @app.get("/health")
-async def health():
+def health():
     return {"status": "ok"}
 
 
+# ====================================================
+# WEBSOCKET STATS
+# ====================================================
+
+@app.get("/ws-stats")
+def ws_stats():
+    from core.ws_manager import manager
+    return {
+        "connections": len(manager.active_connections),
+        "status": "running"
+    }
+    
 # =====================================================
 # ROUTERS
 # =====================================================
