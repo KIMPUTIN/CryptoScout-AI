@@ -44,14 +44,14 @@ def get_scan_status():
 async def broadcast_alert(symbol: str, change_pct: float):
     """Helper function to broadcast alerts asynchronously"""
     try:
-        await manager.broadcast(
-            "score_alert",
-            {
+        await manager.broadcast({
+            "event": "score_alert",
+            "data": {
                 "symbol": symbol,
                 "change_pct": round(change_pct, 2),
                 "timestamp": datetime.utcnow().isoformat()
             }
-        )
+        })
     except Exception as e:
         logger.error(f"Failed to broadcast alert for {symbol}: {e}")
 
@@ -59,17 +59,16 @@ async def broadcast_alert(symbol: str, change_pct: float):
 async def broadcast_scan_completion(processed_count: int, ai_count: int):
     """Helper function to broadcast scan completion"""
     try:
-        await manager.broadcast(
-            "scan_complete",
-            {
+        await manager.broadcast({
+            "event": "scan_complete",
+            "data": {
                 "processed": processed_count,
                 "ai_analyzed": ai_count,
                 "timestamp": datetime.utcnow().isoformat()
             }
-        )
+        })
     except Exception as e:
         logger.error(f"Failed to broadcast scan completion: {e}")
-
 
 def calculate_score_change(previous_score: float, new_score: float) -> float:
     """Calculate percentage change between scores"""
@@ -334,4 +333,4 @@ async def scan_single_project(symbol: str) -> Optional[Dict]:
         logger.error(f"Failed to scan single project {symbol}: {e}")
         return None
     
-    top_opportunities = get_top_opportunities(analyzed_projects, limit=10)
+#    top_opportunities = get_top_opportunities(analyzed_projects, limit=10)
