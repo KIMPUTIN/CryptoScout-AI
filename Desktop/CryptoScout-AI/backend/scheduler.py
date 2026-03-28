@@ -92,11 +92,17 @@ async def _broadcast_signals(signals):
         return
 
     try:
-        await emit("signals_batch", {
-            "count": len(signals),
-            "signals": signals,
-            "timestamp": time.time()
-        })
+        asyncio.run(manager.broadcast({
+            "type": "signals_batch",
+            "data": signals
+        }))
+
+    #try:
+    #    await emit("signals_batch", {
+    #        "count": len(signals),
+    #        "signals": signals,
+    #        "timestamp": time.time()
+    #    })
 
     except Exception as e:
         logger.warning("Failed to broadcast signals batch: %s", e)

@@ -84,6 +84,8 @@ def opportunity_radar():
     radar = []
 
     for s in signals:
+        if not isinstance(s, dict): #
+            continue                #
 
         radar.append({
             "axis": s.get("type"),
@@ -102,6 +104,8 @@ def opportunity_heatmap():
     heatmap = []
 
     for s in signals:
+        if not isinstance(s, dict): #
+            continue                #
 
         heatmap.append({
             "symbol": s.get("symbol"),
@@ -113,12 +117,24 @@ def opportunity_heatmap():
     return heatmap
 
 
+#@router.get("/")
+#def monitor_root():
+#    return {
+#        "status": "monitor online",
+#        "available_endpoints": [
+#            "/monitor/opportunity-radar",
+#            "/monitor/opportunity-heatmap"
+#        ]
+#    }
+
 @router.get("/")
 def monitor_root():
-    return {
-        "status": "monitor online",
-        "available_endpoints": [
-            "/monitor/opportunity-radar",
-            "/monitor/opportunity-heatmap"
-        ]
-    }
+    try:
+        signals = cache_get("recent_signals") or []
+
+        return {
+            "status": "monitor online",
+            "signals_count": len(signals)
+        }
+    except Exception as e:
+        return {"error": str(e)}
