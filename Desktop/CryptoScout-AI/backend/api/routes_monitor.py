@@ -117,7 +117,7 @@ def opportunity_heatmap():
 def monitor_root():
     return {
         "status": "monitor online",
-        "endpoints": [
+        "available_endpoints": [
             "/monitor/opportunity-radar",
             "/monitor/opportunity-heatmap"
         ]
