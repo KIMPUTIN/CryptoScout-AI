@@ -89,7 +89,7 @@ def opportunity_radar():
 
         radar.append({
             "symbol": s.get("symbol"),
-            "score": s.get("score", 0),
+            "score": s.get("ai_score"),
             "confidence": s.get("confidence", 0),
             "momentum": s.get("change_24h", 0)
         })
