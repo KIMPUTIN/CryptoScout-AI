@@ -81,11 +81,16 @@ def opportunity_radar():
 
     signals = cache_get("recent_signals") or []
 
-    radar = []
+    #radar = []
+    safe_signals = []
 
     for s in signals:
-        if not isinstance(s, dict): #
-            continue                #
+        if isisntance(s, dict):
+            safe_signals.append(s)
+
+    #for s in signals:
+    #    if not isinstance(s, dict): #
+    #        continue                #
 
         radar.append({
             "axis": s.get("type"),
@@ -101,11 +106,17 @@ def opportunity_heatmap():
 
     signals = cache_get("recent_signals") or []
 
-    heatmap = []
+    #heatmap = []
+
+    safe_signals = []
 
     for s in signals:
-        if not isinstance(s, dict): #
-            continue                #
+        if isinstance(s,dict):
+            safe_signals.append(s)
+
+    #for s in signals:
+    #    if not isinstance(s, dict): #
+    #        continue                #
 
         heatmap.append({
             "symbol": s.get("symbol"),

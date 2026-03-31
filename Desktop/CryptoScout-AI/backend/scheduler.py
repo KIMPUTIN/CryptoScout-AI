@@ -91,7 +91,15 @@ async def _broadcast_signals(signals):
     if not signals:
         return
 
+
     try:
+        loop = asyncio.get_running_loop()
+        loop.create_task(manager.broadcast({
+            "type": "signals_batch",
+            "data": signals
+        }))
+    except RuntimeError:
+        # fallback if no loop
         asyncio.run(manager.broadcast({
             "type": "signals_batch",
             "data": signals
@@ -104,8 +112,8 @@ async def _broadcast_signals(signals):
     #        "timestamp": time.time()
     #    })
 
-    except Exception as e:
-        logger.warning("Failed to broadcast signals batch: %s", e)
+    #except Exception as e:
+    #    logger.warning("Failed to broadcast signals batch: %s", e)
 
 # =====================================================
 # BACKGROUND LOOP
