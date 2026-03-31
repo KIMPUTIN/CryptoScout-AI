@@ -67,6 +67,15 @@ class CircuitBreaker:
             self.state = OPEN
 
 
+    def snapshot(self):
+        return {
+            "state": self.state,
+            "failure_count": self.failure_count,
+            "last_failure_time": self.last_failure_time,
+            "recovery_time": self.recovery_time
+        }
+
+
 # global circuit breaker instance
 ai_circuit_breaker = CircuitBreaker(
     failure_threshold=5,
