@@ -110,13 +110,21 @@ def opportunity_heatmap():
 
         heatmap.append({
             "symbol": s.get("symbol"),
+
             "market_cap": s.get("market_cap", 0),
             "volume": s.get("volume_24h", 0),
-            "momentum": s.get("change_24h", 0)
+            "momentum": s.get("price_change_24h", 0),
+
+    # 🚀 ADD THIS HERE
+            "heat_score": round(
+                (s.get("price_change_24h", 0) * 0.5) +
+                (s.get("volume_24h", 0) / 1_000_000 * 0.3) +
+                (s.get("market_cap", 0) / 1_000_000_000 * 0.2),
+                2
+            )
         })
 
     return heatmap
-
 
 #@router.get("/")
 #def monitor_root():
